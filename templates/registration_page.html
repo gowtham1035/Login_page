@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Page</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="registration-container">
+        <h1>Register</h1>
+        <form action="/register" method="POST">
+            <input type="text" name="username" placeholder="Enter Username" required>
+            <input type="password" name="password" placeholder="Enter Password" required>
+            <button type="submit">Register</button>
+        </form>
+        <form action="/" method = 'get'>
+            <button class="login-btn small-btn" href='/home_page.html'>Login</button>
+        </form>
+    </div>
+</body>
+</html>
