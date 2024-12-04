@@ -1,14 +1,92 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import psycopg2
+import os
+from flask import Flask, redirect, url_for, request, session, jsonify
+from google_auth_oauthlib.flow import Flow
+from google.auth.transport.requests import Request
+import google.auth
+import google.auth.exceptions
+import pathlib
+
+import requests
+from flask import Flask, session, abort, redirect, request
+from google.oauth2 import id_token
+from google_auth_oauthlib.flow import Flow
+from pip._vendor import cachecontrol
+import google.auth.transport.requests
+
 
 app = Flask(__name__)
+
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+GOOGLE_CLIENT_ID = "252364305641-alloc4m9ovpauvqdhed8jlbpiuhnj28s.apps.googleusercontent.com"
+client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret.json")
+
+flow = Flow.from_client_secrets_file(
+    client_secrets_file=client_secrets_file,
+    scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
+    redirect_uri="http://127.0.0.1:5000/callback"
+)
+
+
+def login_is_required(function):
+    def wrapper(*args, **kwargs):
+        if "google_id" not in session:
+            return abort(401)  # Authorization required
+        else:
+            return function()
+
+    return wrapper
+
+
+@app.route("/google-login")
+def login():
+    authorization_url, state = flow.authorization_url(prompt='login')
+    session["state"] = state
+    return redirect(authorization_url)
+
+
+@app.route("/callback")
+def callback():
+    flow.fetch_token(authorization_response=request.url)
+
+    if not session["state"] == request.args["state"]:
+        abort(500)  # State does not match!
+
+    credentials = flow.credentials
+    request_session = requests.session()
+    cached_session = cachecontrol.CacheControl(request_session)
+    token_request = google.auth.transport.requests.Request(session=cached_session)
+
+    id_info = id_token.verify_oauth2_token(
+        id_token=credentials._id_token,
+        request=token_request,
+        audience=GOOGLE_CLIENT_ID
+    )
+
+    session["google_id"] = id_info.get("sub")
+    session["name"] = id_info.get("name")
+    session['email'] = id_info.get('email').split('@')[0]
+    username = session['email']
+    return render_template('/success_page.html',username=username)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
+
+
+
 app.secret_key = "your_secret_key"
 
 # Database connection details
 DB_HOST = "localhost"
 DB_NAME = "postgres"
 DB_USER = "postgres"
-DB_PASSWORD = "msithyd1"
+DB_PASSWORD = ""
 
 # Connect to the PostgreSQL database
 def get_db_connection():
@@ -43,7 +121,7 @@ def home():
     return render_template('home_page.html')
 
 @app.route('/login', methods=['POST'])
-def login():
+def login_verify():
     
     username = request.form['username']
     password = request.form['password']
@@ -59,7 +137,7 @@ def login():
         user = cursor.fetchone()
         if user:
             flash("Login successful!", "success")
-            return render_template('success_page.html')
+            return render_template('success_page.html',username = username.split('@')[0])
         else:
             flash("Invalid username or password", "danger")
             return render_template('unsuccessful_login_page.html')
