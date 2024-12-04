@@ -1,12 +1,4 @@
 {
-    "version" : 2,
     "builds": [{"src": "app.py", "use": "@vercel/python"}],
-    "routes": [{"src": "/(.*)", "dest": "app.py"}],
-    "redirects": [
-    {
-      "source": "/(.*)",
-      "destination": "https://your-app-url.vercel.app/$1",
-      "permanent": true
-    }
-  ]
+    "routes": [{"src": "/(.*)", "dest": "app.py"}]
 }
