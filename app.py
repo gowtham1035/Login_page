@@ -182,4 +182,4 @@ def register():
     return render_template('registration_page.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
