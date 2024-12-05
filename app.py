@@ -11,10 +11,8 @@ import pathlib
 import requests
 from flask import Flask, session, abort, redirect, request
 from google.oauth2 import id_token
-from google_auth_oauthlib.flow import Flow
 from pip._vendor import cachecontrol
 import google.auth.transport.requests
-
 
 app = Flask(__name__)
 
@@ -26,7 +24,7 @@ client_secrets_file = os.path.join(pathlib.Path(__file__).parent, "client_secret
 flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
     scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
-    redirect_uri="http://127.0.0.1:5000/callback"
+    redirect_uri="https://6b4f-115-114-88-222.ngrok-free.app/callback"
 )
 
 
@@ -80,7 +78,7 @@ def logout():
 
 
 
-app.secret_key = "your_secret_key"
+app.secret_key = os.urandom(24)
 
 # Database connection details
 DB_HOST = "localhost"
@@ -182,4 +180,4 @@ def register():
     return render_template('registration_page.html')
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
